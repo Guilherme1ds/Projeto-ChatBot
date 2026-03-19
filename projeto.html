@@ -5,6 +5,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>FlorIA Chatbot</title>
 	<link rel="stylesheet" href="projeto.css">
+	<link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
+	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 </head>
 <body>
@@ -13,20 +15,105 @@
 			<div class="logo-wrapper">
 				<img src="img/image-removebg-preview.png" alt="Logo FlorIA" class="logo">
 			</div>
+			<button class="new-chat-btn" onclick="location.reload()">
+				<span class="material-symbols-outlined">add</span>
+				Novo Chat
+			</button>
 		</aside>
+
 		<main class="main-content">
-			<div class="theme-icon">
-				<span class="material-symbols-outlined">sunny</span>
+			<div class="theme-icon" id="theme-toggle" title="Mudar Tema">
+				<span class="material-symbols-outlined" id="theme-icon-span">sunny</span>
 			</div>
-			<div class="mascot">
-				<img src="img/mascote planta.png" alt="Mascote FlorIA">
+
+			<div id="welcome-screen" class="welcome-screen">
+				<div class="mascot">
+					<img src="img/mascote planta.png" alt="Mascote FlorIA">
+				</div>
+				<h1>FlorIA</h1>
+				<p class="subtitle">Semeando dados, colhendo resultados.</p>
 			</div>
-			<h1>FlorIA</h1>
-			<p class="subtitle">Semeando dados, colhendo resultados.</p>
-			<form class="question-form">
-				<input type="text" placeholder="Digite sua pergunta">
+
+			<div id="chat-history" class="chat-history" style="display: none;"></div>
+
+			<form class="question-form" id="chat-form">
+				<input type="text" id="chat-input" placeholder="Digite sua pergunta..." required autocomplete="off">
 			</form>
 		</main>
 	</div>
+
+	<script>
+
+		const BACKEND_URL = 'http://127.0.0.1:5000/api/chat';
+
+		const themeToggle = document.getElementById('theme-toggle');
+		const themeIconSpan = document.getElementById('theme-icon-span');
+		const body = document.body;
+
+		themeToggle.addEventListener('click', () => {
+			body.classList.toggle('dark-mode');
+			if (body.classList.contains('dark-mode')) {
+				themeIconSpan.textContent = 'dark_mode';
+			} else {
+				themeIconSpan.textContent = 'sunny';
+			}
+		});
+
+		const chatForm = document.getElementById('chat-form');
+		const chatInput = document.getElementById('chat-input');
+		const chatHistory = document.getElementById('chat-history');
+		const welcomeScreen = document.getElementById('welcome-screen');
+
+		function addMessageToUI(message, sender) {
+			const messageDiv = document.createElement('div');
+			messageDiv.classList.add('chat-message', `${sender}-message`);
+			
+			const textSpan = document.createElement('span');
+			textSpan.textContent = message;
+			
+			messageDiv.appendChild(textSpan);
+			chatHistory.appendChild(messageDiv);
+			
+			chatHistory.scrollTop = chatHistory.scrollHeight;
+		}
+
+		chatForm.addEventListener('submit', async (e) => {
+			e.preventDefault(); 
+
+			const userText = chatInput.value.trim();
+			if (!userText) return;
+
+			welcomeScreen.style.display = 'none';
+			chatHistory.style.display = 'flex';
+
+			addMessageToUI(userText, 'user');
+			chatInput.value = '';
+
+			addMessageToUI('Pensando...', 'bot-loading');
+
+			try {
+				const response = await fetch(BACKEND_URL, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ message: userText })
+				});
+
+				const data = await response.json();
+
+				chatHistory.removeChild(chatHistory.lastChild);
+
+				if (!response.ok) {
+					throw new Error(data.error || 'Erro desconhecido');
+				}
+
+				addMessageToUI(data.reply, 'bot');
+
+			} catch (error) {
+				console.error('Erro de conexão:', error);
+				chatHistory.removeChild(chatHistory.lastChild);
+				addMessageToUI('Ops! Parece que o servidor da FlorIA está desligado. Verifique o terminal do Python.', 'bot');
+			}
+		});
+	</script>
 </body>
 </html>
