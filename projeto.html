@@ -3,93 +3,266 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>FlorIA Chatbot</title>
+	<title>FlorIA | Sua IA Botânica</title>
 	<link rel="stylesheet" href="projeto.css">
-	<link rel="shortcut icon" href="/img/favicon.ico" type="image/x-icon">
-	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+	<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 <body>
 	<div class="container">
-		<aside class="sidebar">
+		<button class="mobile-menu-btn" id="mobile-toggle">
+			<span class="material-symbols-outlined">menu</span>
+		</button>
+
+		<aside class="sidebar" id="sidebar">
 			<div class="logo-wrapper">
-				<img src="img/image-removebg-preview.png" alt="Logo FlorIA" class="logo">
+				<img src="img/image-removebg-preview.png" alt="Logo FlorIA" class="logo" onerror="this.src='https://placehold.co/80x80/1e4d1f/FFF?text=F'">
 			</div>
-			<button class="new-chat-btn" onclick="location.reload()">
+			<button class="new-chat-btn" id="new-chat-btn">
 				<span class="material-symbols-outlined">add</span>
 				Novo Chat
 			</button>
+
+			<div class="history-container">
+				<h3 class="history-title">Conversas Anteriores</h3>
+				<ul class="history-list" id="history-list">
+					</ul>
+			</div>
 		</aside>
 
 		<main class="main-content">
-			<div class="theme-icon" id="theme-toggle" title="Mudar Tema">
-				<span class="material-symbols-outlined" id="theme-icon-span">sunny</span>
-			</div>
+			<header class="top-bar">
+				<div class="theme-icon" id="theme-toggle" title="Mudar Tema">
+					<span class="material-symbols-outlined" id="theme-icon-span">dark_mode</span>
+				</div>
+			</header>
 
 			<div id="welcome-screen" class="welcome-screen">
 				<div class="mascot">
-					<img src="img/mascote planta.png" alt="Mascote FlorIA">
+					<img src="img/mascote planta.png" alt="Mascote FlorIA" onerror="this.src='https://placehold.co/200x200/287a2c/FFF?text=FlorIA'">
 				</div>
 				<h1>FlorIA</h1>
-				<p class="subtitle">Semeando dados, colhendo resultados.</p>
+				<p class="subtitle">Sua assistente inteligente para o mundo verde.</p>
+
+				<section class="intro-section">
+					<div class="video-container">
+						<iframe 
+							src="https://www.youtube.com/embed/ZzE4v4fN_W8?si=placeholder" 
+							title="Apresentação da FlorIA" 
+							frameborder="0" 
+							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+							allowfullscreen>
+						</iframe>
+					</div>
+					
+					<div class="intro-text">
+						<p>Bem-vindo à <strong>FlorIA</strong>, uma inteligência artificial criada exclusivamente para apaixonados pela natureza, botânicos, agricultores e curiosos. Nosso objetivo é democratizar o conhecimento sobre flora, ecologia e cuidados com o meio ambiente de forma acessível, rápida e orgânica.</p>
+						<p>No vídeo acima, você conferiu como a FlorIA pode ajudar no dia a dia. Seja para identificar pragas em suas plantas, descobrir a melhor época para podar sua horta, ou aprender sobre adubação sustentável, ela está pronta para ajudar.</p>
+						<p>Envie sua pergunta no campo abaixo e deixe a FlorIA plantar as melhores soluções na sua tela!</p>
+					</div>
+				</section>
 			</div>
 
 			<div id="chat-history" class="chat-history" style="display: none;"></div>
 
-			<form class="question-form" id="chat-form">
-				<input type="text" id="chat-input" placeholder="Digite sua pergunta..." required autocomplete="off">
-			</form>
+			<div class="input-container">
+				<form class="question-form" id="chat-form">
+					<div class="input-wrapper">
+						<input type="text" id="chat-input" placeholder="Pergunte à FlorIA sobre plantas..." required autocomplete="off">
+						<button type="submit" class="send-btn" title="Enviar">
+							<span class="material-symbols-outlined">send</span>
+						</button>
+					</div>
+				</form>
+				<p class="disclaimer">A FlorIA pode cometer erros ao identificar espécies. Sempre verifique informações sensíveis.</p>
+			</div>
 		</main>
 	</div>
 
 	<script>
-
 		const BACKEND_URL = 'http://127.0.0.1:5000/api/chat';
 
+		// Elementos da DOM
 		const themeToggle = document.getElementById('theme-toggle');
 		const themeIconSpan = document.getElementById('theme-icon-span');
 		const body = document.body;
-
-		themeToggle.addEventListener('click', () => {
-			body.classList.toggle('dark-mode');
-			if (body.classList.contains('dark-mode')) {
-				themeIconSpan.textContent = 'dark_mode';
-			} else {
-				themeIconSpan.textContent = 'sunny';
-			}
-		});
-
 		const chatForm = document.getElementById('chat-form');
 		const chatInput = document.getElementById('chat-input');
 		const chatHistory = document.getElementById('chat-history');
 		const welcomeScreen = document.getElementById('welcome-screen');
+		const newChatBtn = document.getElementById('new-chat-btn');
+		const mobileToggle = document.getElementById('mobile-toggle');
+		const sidebar = document.getElementById('sidebar');
+		const historyList = document.getElementById('history-list');
 
-		function addMessageToUI(message, sender) {
+		// Controle de Tema Persistente
+		const savedTheme = localStorage.getItem('floria-theme');
+		if (savedTheme === 'dark') {
+			body.classList.add('dark-mode');
+			themeIconSpan.textContent = 'light_mode';
+		}
+
+		themeToggle.addEventListener('click', () => {
+			body.classList.toggle('dark-mode');
+			const isDark = body.classList.contains('dark-mode');
+			themeIconSpan.textContent = isDark ? 'light_mode' : 'dark_mode';
+			localStorage.setItem('floria-theme', isDark ? 'dark' : 'light');
+		});
+
+		// Toggle Menu Mobile
+		mobileToggle.addEventListener('click', () => {
+			sidebar.classList.toggle('active');
+		});
+
+		// ================= LÓGICA DE SESSÕES (MÚLTIPLOS CHATS) =================
+		
+		let sessions = JSON.parse(localStorage.getItem('floria-sessions')) || [];
+		let currentSessionId = null;
+
+		function saveSessions() {
+			localStorage.setItem('floria-sessions', JSON.stringify(sessions));
+			renderSidebar();
+		}
+
+		function renderSidebar() {
+			historyList.innerHTML = '';
+			
+			[...sessions].reverse().forEach(session => {
+				const li = document.createElement('li');
+				li.classList.add('history-item');
+				if (session.id === currentSessionId) li.classList.add('active');
+				
+				// Container clicável para abrir a conversa
+				const contentDiv = document.createElement('div');
+				contentDiv.classList.add('history-item-content');
+				contentDiv.innerHTML = `
+					<span class="material-symbols-outlined">psychiatry</span>
+					<span>${session.title}</span>
+				`;
+				contentDiv.addEventListener('click', () => loadSession(session.id));
+
+				// Botão de Deletar
+				const deleteBtn = document.createElement('span');
+				deleteBtn.classList.add('material-symbols-outlined', 'delete-btn');
+				deleteBtn.textContent = 'delete';
+				deleteBtn.title = 'Excluir chat';
+				deleteBtn.addEventListener('click', (e) => {
+					e.stopPropagation(); // Evita que o clique abra a conversa
+					deleteSession(session.id);
+				});
+				
+				li.appendChild(contentDiv);
+				li.appendChild(deleteBtn);
+				historyList.appendChild(li);
+			});
+		}
+
+		function loadSession(id) {
+			currentSessionId = id;
+			const session = sessions.find(s => s.id === id);
+			if (!session) return;
+			
+			chatHistory.innerHTML = '';
+			welcomeScreen.style.display = 'none';
+			chatHistory.style.display = 'flex';
+			
+			session.messages.forEach(msg => addMessageToUI(msg.text, msg.sender, false));
+			
+			renderSidebar();
+			if(window.innerWidth <= 768) sidebar.classList.remove('active');
+		}
+
+		function deleteSession(id) {
+			sessions = sessions.filter(s => s.id !== id);
+			saveSessions();
+			
+			// Se deletou o chat atual, volta pra tela de boas-vindas
+			if (currentSessionId === id) {
+				currentSessionId = null;
+				chatHistory.innerHTML = '';
+				chatHistory.style.display = 'none';
+				welcomeScreen.style.display = 'flex';
+			}
+		}
+
+		newChatBtn.addEventListener('click', () => {
+			currentSessionId = null;
+			chatHistory.innerHTML = '';
+			chatHistory.style.display = 'none';
+			welcomeScreen.style.display = 'flex';
+			renderSidebar();
+			if(window.innerWidth <= 768) sidebar.classList.remove('active');
+		});
+
+		// Inicializa barra lateral
+		renderSidebar();
+
+		// ================= LÓGICA DE MENSAGENS =================
+
+		function showTypingIndicator() {
+			const typingDiv = document.createElement('div');
+			typingDiv.classList.add('chat-message', 'bot-message', 'typing-indicator-wrapper');
+			typingDiv.id = 'typing-indicator';
+			typingDiv.innerHTML = `
+				<div class="message-bubble">
+					<div class="typing-dots">
+						<span></span><span></span><span></span>
+					</div>
+				</div>
+			`;
+			chatHistory.appendChild(typingDiv);
+			scrollToBottom();
+		}
+
+		function removeTypingIndicator() {
+			const indicator = document.getElementById('typing-indicator');
+			if (indicator) indicator.remove();
+		}
+
+		function addMessageToUI(message, sender, save = true) {
 			const messageDiv = document.createElement('div');
 			messageDiv.classList.add('chat-message', `${sender}-message`);
 			
-			const textSpan = document.createElement('span');
-			textSpan.textContent = message;
+			const bubble = document.createElement('div');
+			bubble.classList.add('message-bubble');
+			bubble.innerHTML = message.replace(/\n/g, '<br>'); 
 			
-			messageDiv.appendChild(textSpan);
+			messageDiv.appendChild(bubble);
 			chatHistory.appendChild(messageDiv);
 			
-			chatHistory.scrollTop = chatHistory.scrollHeight;
+			if (save && sender !== 'error') {
+				const session = sessions.find(s => s.id === currentSessionId);
+				if (session) {
+					session.messages.push({ text: message, sender: sender });
+					saveSessions();
+				}
+			}
+			
+			scrollToBottom();
+		}
+
+		function scrollToBottom() {
+			chatHistory.scrollTo({ top: chatHistory.scrollHeight, behavior: 'smooth' });
 		}
 
 		chatForm.addEventListener('submit', async (e) => {
 			e.preventDefault(); 
-
 			const userText = chatInput.value.trim();
 			if (!userText) return;
 
+			if (!currentSessionId) {
+				currentSessionId = Date.now().toString(); 
+				const newTitle = userText.length > 25 ? userText.substring(0, 25) + '...' : userText;
+				sessions.push({ id: currentSessionId, title: newTitle, messages: [] });
+			}
+
 			welcomeScreen.style.display = 'none';
 			chatHistory.style.display = 'flex';
-
 			addMessageToUI(userText, 'user');
 			chatInput.value = '';
-
-			addMessageToUI('Pensando...', 'bot-loading');
+			
+			showTypingIndicator();
 
 			try {
 				const response = await fetch(BACKEND_URL, {
@@ -99,19 +272,16 @@
 				});
 
 				const data = await response.json();
+				removeTypingIndicator();
 
-				chatHistory.removeChild(chatHistory.lastChild);
-
-				if (!response.ok) {
-					throw new Error(data.error || 'Erro desconhecido');
-				}
-
+				if (!response.ok) throw new Error(data.error || 'Erro desconhecido');
+				
 				addMessageToUI(data.reply, 'bot');
 
 			} catch (error) {
-				console.error('Erro de conexão:', error);
-				chatHistory.removeChild(chatHistory.lastChild);
-				addMessageToUI('Ops! Parece que o servidor da FlorIA está desligado. Verifique o terminal do Python.', 'bot');
+				console.error('Erro:', error);
+				removeTypingIndicator();
+				addMessageToUI(error.message || 'Ops! As folhas da FlorIA murcharam. Verifique a conexão.', 'error');
 			}
 		});
 	</script>
