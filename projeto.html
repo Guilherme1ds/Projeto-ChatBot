@@ -37,7 +37,10 @@
 		</aside>
 
 		<main class="main-content">
-			<header class="top-bar">
+			<header class="top-bar" style="display: flex; gap: 12px; justify-content: flex-end;">
+				<div class="theme-icon" id="mute-toggle" title="Ligar/Desligar Voz">
+					<span class="material-symbols-outlined" id="mute-icon-span">volume_up</span>
+				</div>
 				<div class="theme-icon" id="theme-toggle" title="Mudar Tema">
 					<span class="material-symbols-outlined" id="theme-icon-span">dark_mode</span>
 				</div>
@@ -48,7 +51,7 @@
 					<img src="img/mascote planta.png" alt="Mascote FlorIA" onerror="this.src='https://placehold.co/200x200/287a2c/FFF?text=FlorIA'">
 				</div>
 				<h1>FlorIA</h1>
-				<p class="subtitle">Como posso ajudar as tuas plantas hoje?</p>
+				<p class="subtitle">Como posso ajudar as suas plantas hoje?</p>
 			</div>
 
 			<div id="chat-history" class="chat-history" style="display: none;"></div>
@@ -56,13 +59,18 @@
 			<div class="input-container">
 				<form class="question-form" id="chat-form">
 					<div class="input-wrapper">
-						<input type="text" id="chat-input" placeholder="Pergunta à FlorIA sobre plantas..." required autocomplete="off">
+						<input type="text" id="chat-input" placeholder="Pergunte à FlorIA sobre plantas..." required autocomplete="off">
+						
+						<button type="button" id="mic-btn" class="send-btn" style="background: transparent; color: var(--texto-secundario);" title="Falar com a FlorIA">
+							<span class="material-symbols-outlined">mic</span>
+						</button>
+
 						<button type="submit" class="send-btn" title="Enviar">
 							<span class="material-symbols-outlined">send</span>
 						</button>
 					</div>
 				</form>
-				<p class="disclaimer">A FlorIA pode cometer erros ao identificar espécies. Verifica sempre as informações sensíveis.</p>
+				<p class="disclaimer">A FlorIA pode cometer erros ao identificar espécies. Verifique sempre as informações sensíveis.</p>
 			</div>
 		</main>
 	</div>
@@ -70,17 +78,10 @@
 	<script>
 		const BACKEND_URL = 'http://127.0.0.1:5000/api/chat';
 
+		// ================= CONTROLO DE TEMA =================
 		const themeToggle = document.getElementById('theme-toggle');
 		const themeIconSpan = document.getElementById('theme-icon-span');
 		const body = document.body;
-		const chatForm = document.getElementById('chat-form');
-		const chatInput = document.getElementById('chat-input');
-		const chatHistory = document.getElementById('chat-history');
-		const welcomeScreen = document.getElementById('welcome-screen');
-		const newChatBtn = document.getElementById('new-chat-btn');
-		const mobileToggle = document.getElementById('mobile-toggle');
-		const sidebar = document.getElementById('sidebar');
-		const historyList = document.getElementById('history-list');
 
 		const savedTheme = localStorage.getItem('floria-theme');
 		if (savedTheme === 'dark') {
@@ -95,9 +96,105 @@
 			localStorage.setItem('floria-theme', isDark ? 'dark' : 'light');
 		});
 
-		mobileToggle.addEventListener('click', () => {
-			sidebar.classList.toggle('active');
+		// ================= CONTROLO DE VOZ E MICROFONE =================
+		let isMuted = localStorage.getItem('floria-muted') === 'true';
+		const muteToggle = document.getElementById('mute-toggle');
+		const muteIconSpan = document.getElementById('mute-icon-span');
+		muteIconSpan.textContent = isMuted ? 'volume_off' : 'volume_up';
+
+		muteToggle.addEventListener('click', () => {
+			isMuted = !isMuted;
+			localStorage.setItem('floria-muted', isMuted);
+			muteIconSpan.textContent = isMuted ? 'volume_off' : 'volume_up';
+			if (isMuted && 'speechSynthesis' in window) {
+				window.speechSynthesis.cancel(); // Para de falar se o utilizador silenciar a meio
+			}
 		});
+
+		function speakText(text) {
+			if (isMuted || !('speechSynthesis' in window)) return;
+			
+			// Limpa formatação Markdown para a leitura ser mais natural
+			const cleanText = text.replace(/[*#_`~]/g, ''); 
+			const utterance = new SpeechSynthesisUtterance(cleanText);
+			utterance.lang = 'pt-BR';
+			utterance.rate = 1.05; 
+			utterance.pitch = 1.1; 
+			window.speechSynthesis.speak(utterance);
+		}
+
+		const micBtn = document.getElementById('mic-btn');
+		const chatInput = document.getElementById('chat-input');
+		const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+		if (SpeechRecognition) {
+			const recognition = new SpeechRecognition();
+			recognition.lang = 'pt-BR'; // Idioma que vai reconhecer
+			recognition.continuous = false;
+			
+			// Variável para saber se está a gravar ou não
+			let isListening = false;
+
+			micBtn.addEventListener('click', () => {
+				if (isListening) {
+					// Se já está a ouvir, manda parar manualmente
+					recognition.stop();
+					isListening = false;
+					micBtn.style.color = 'var(--texto-secundario)'; // Volta à cor normal
+					chatInput.placeholder = "Pergunta à FlorIA sobre plantas...";
+				} else {
+					// Se não está a ouvir, começa a gravar
+					try {
+						recognition.start();
+						isListening = true;
+						micBtn.style.color = '#ef4444'; // Fica vermelho
+						chatInput.placeholder = "A ouvir as tuas raízes... (Clica novamente para parar)";
+					} catch (e) {
+						console.error("O microfone já estava ativo.");
+					}
+				}
+			});
+
+			recognition.onresult = (event) => {
+				chatInput.value = event.results[0][0].transcript;
+			};
+
+			// Quando a pessoa termina de falar naturalmente
+			recognition.onspeechend = () => {
+				recognition.stop();
+				isListening = false;
+				micBtn.style.color = 'var(--texto-secundario)';
+				chatInput.placeholder = "Pergunta à FlorIA sobre plantas...";
+			};
+
+			// Se houver algum erro ou ninguém falar
+			recognition.onerror = (event) => {
+				console.error('Erro no microfone:', event.error);
+				isListening = false;
+				micBtn.style.color = 'var(--texto-secundario)';
+				
+				if (event.error === 'no-speech') {
+					chatInput.placeholder = "Não ouvi nada. Tenta novamente!";
+				} else {
+					chatInput.placeholder = "Erro ao ouvir. Tenta escrever!";
+				}
+				
+				setTimeout(() => chatInput.placeholder = "Pergunta à FlorIA sobre plantas...", 3000);
+			};
+		} else {
+			micBtn.style.display = 'none'; // Esconde se o navegador for incompatível
+		}
+
+		// ================= CHAT E LÓGICA BASE =================
+		const chatForm = document.getElementById('chat-form');
+		const chatHistory = document.getElementById('chat-history');
+		const welcomeScreen = document.getElementById('welcome-screen');
+		const newChatBtn = document.getElementById('new-chat-btn');
+		const mobileToggle = document.getElementById('mobile-toggle');
+		const sidebar = document.getElementById('sidebar');
+		const historyList = document.getElementById('history-list');
+
+		mobileToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
 
 		let sessions = JSON.parse(localStorage.getItem('floria-sessions')) || [];
 		let currentSessionId = null;
@@ -109,7 +206,6 @@
 
 		function renderSidebar() {
 			historyList.innerHTML = '';
-			
 			[...sessions].reverse().forEach(session => {
 				const li = document.createElement('li');
 				li.classList.add('history-item');
@@ -117,10 +213,7 @@
 				
 				const contentDiv = document.createElement('div');
 				contentDiv.classList.add('history-item-content');
-				contentDiv.innerHTML = `
-					<span class="material-symbols-outlined">psychiatry</span>
-					<span>${session.title}</span>
-				`;
+				contentDiv.innerHTML = `<span class="material-symbols-outlined">psychiatry</span><span>${session.title}</span>`;
 				contentDiv.addEventListener('click', () => loadSession(session.id));
 
 				const deleteBtn = document.createElement('span');
@@ -142,26 +235,24 @@
 			currentSessionId = id;
 			const session = sessions.find(s => s.id === id);
 			if (!session) return;
-			
 			chatHistory.innerHTML = '';
 			welcomeScreen.style.display = 'none';
 			chatHistory.style.display = 'flex';
-			
 			session.messages.forEach(msg => addMessageToUI(msg.text, msg.sender, false));
-			
 			renderSidebar();
 			if(window.innerWidth <= 768) sidebar.classList.remove('active');
+			if ('speechSynthesis' in window) window.speechSynthesis.cancel(); // Para a voz ao mudar de chat
 		}
 
 		function deleteSession(id) {
 			sessions = sessions.filter(s => s.id !== id);
 			saveSessions();
-			
 			if (currentSessionId === id) {
 				currentSessionId = null;
 				chatHistory.innerHTML = '';
 				chatHistory.style.display = 'none';
 				welcomeScreen.style.display = 'flex';
+				if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 			}
 		}
 
@@ -172,6 +263,7 @@
 			welcomeScreen.style.display = 'flex';
 			renderSidebar();
 			if(window.innerWidth <= 768) sidebar.classList.remove('active');
+			if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 		});
 
 		renderSidebar();
@@ -180,13 +272,7 @@
 			const typingDiv = document.createElement('div');
 			typingDiv.classList.add('chat-message', 'bot-message', 'typing-indicator-wrapper');
 			typingDiv.id = 'typing-indicator';
-			typingDiv.innerHTML = `
-				<div class="message-bubble">
-					<div class="typing-dots">
-						<span></span><span></span><span></span>
-					</div>
-				</div>
-			`;
+			typingDiv.innerHTML = `<div class="message-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
 			chatHistory.appendChild(typingDiv);
 			scrollToBottom();
 		}
@@ -199,17 +285,12 @@
 		function addMessageToUI(message, sender, save = true) {
 			const messageDiv = document.createElement('div');
 			messageDiv.classList.add('chat-message', `${sender}-message`);
-			
 			const bubble = document.createElement('div');
 			bubble.classList.add('message-bubble');
 			
-			if (sender === 'bot') {
-				bubble.innerHTML = marked.parse(message);
-			} else if (sender === 'user') {
-				bubble.innerHTML = message.replace(/\n/g, '<br>');
-			} else {
-				bubble.innerHTML = message;
-			}
+			if (sender === 'bot') bubble.innerHTML = marked.parse(message);
+			else if (sender === 'user') bubble.innerHTML = message.replace(/\n/g, '<br>');
+			else bubble.innerHTML = message;
 			
 			messageDiv.appendChild(bubble);
 			chatHistory.appendChild(messageDiv);
@@ -221,7 +302,6 @@
 					saveSessions();
 				}
 			}
-			
 			scrollToBottom();
 		}
 
@@ -234,13 +314,15 @@
 			const userText = chatInput.value.trim();
 			if (!userText) return;
 
+			// Pára qualquer fala anterior se o utilizador enviar nova mensagem
+			if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
 			if (!currentSessionId) {
 				currentSessionId = Date.now().toString(); 
 				const newTitle = userText.length > 25 ? userText.substring(0, 25) + '...' : userText;
 				sessions.push({ id: currentSessionId, title: newTitle, messages: [] });
 			}
 
-			// Prepara o histórico da sessão atual para a memória da IA
 			const currentSession = sessions.find(s => s.id === currentSessionId);
 			const historyToSend = currentSession.messages
 				.filter(msg => msg.sender !== 'error')
@@ -271,6 +353,9 @@
 				if (!response.ok) throw new Error(data.error || 'Erro desconhecido');
 				
 				addMessageToUI(data.reply, 'bot');
+				
+				// A FlorIA FALA AQUI!
+				speakText(data.reply);
 
 			} catch (error) {
 				console.error('Erro:', error);

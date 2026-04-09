@@ -7,15 +7,30 @@
 	<link rel="stylesheet" href="projeto.css">
 	<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 <body class="intro-body">
+	
+	<nav class="top-navbar">
+		<div class="nav-logo">
+			<img src="img/image-removebg-preview.png" alt="Logo FlorIA" class="nav-logo-img" onerror="this.src='https://placehold.co/40x40/1e4d1f/FFF?text=F'">
+			<span class="nav-brand">FlorIA</span>
+		</div>
+		
+		<div style="display: flex; gap: 16px; align-items: center;">
+			<div class="theme-icon" id="theme-toggle" title="Mudar Tema">
+				<span class="material-symbols-outlined" id="theme-icon-span">dark_mode</span>
+			</div>
+			<a href="projeto.html" class="nav-btn">Iniciar Chat</a>
+		</div>
+	</nav>
+
 	<div class="intro-page-container">
 		
 		<header class="intro-header">
 			<img src="img/mascote planta.png" alt="Mascote FlorIA" class="intro-mascot" onerror="this.src='https://placehold.co/120x120/287a2c/FFF?text=FlorIA'">
 			<h1>Descubra a FlorIA</h1>
 			<p class="subtitle">A inteligência artificial que entende tudo sobre o mundo verde.</p>
-			<a href="projeto.html" class="btn-primary">Acessar a FlorIA Agora</a>
 		</header>
 
 		<section class="intro-section">
@@ -35,11 +50,79 @@
 				
 				<div class="cta-container">
 					<p><strong>Pronto para plantar novas ideias?</strong></p>
-					<a href="projeto.html" class="btn-secondary">Experimente: Iniciar Chat com a IA</a>
+					
+					<div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+						<a href="projeto.html" class="btn-primary">Iniciar Chat com a IA</a>
+						<button id="read-intro-btn" class="btn-secondary" style="display: flex; align-items: center; gap: 8px;">
+							<span class="material-symbols-outlined">record_voice_over</span>
+							Ouvir Apresentação
+						</button>
+					</div>
 				</div>
 			</div>
 		</section>
 
 	</div>
+
+	<script>
+		// Controlo do Modo Escuro
+		const themeToggle = document.getElementById('theme-toggle');
+		const themeIconSpan = document.getElementById('theme-icon-span');
+		const body = document.body;
+
+		const savedTheme = localStorage.getItem('floria-theme');
+		if (savedTheme === 'dark') {
+			body.classList.add('dark-mode');
+			themeIconSpan.textContent = 'light_mode';
+		}
+
+		themeToggle.addEventListener('click', () => {
+			body.classList.toggle('dark-mode');
+			const isDark = body.classList.contains('dark-mode');
+			themeIconSpan.textContent = isDark ? 'light_mode' : 'dark_mode';
+			localStorage.setItem('floria-theme', isDark ? 'dark' : 'light');
+		});
+
+		// Lógica para ler o texto da página inicial
+		const readBtn = document.getElementById('read-intro-btn');
+		let isReading = false;
+
+		// Texto que a FlorIA vai ler
+		const introText = "Bem-vindo à FlorIA, uma inteligência artificial criada exclusivamente para apaixonados pela natureza, botânicos, agricultores e curiosos. O nosso objetivo é democratizar o conhecimento sobre flora, ecologia e cuidados com o meio ambiente de forma acessível, rápida e orgânica. Experimente iniciar um chat para plantar novas ideias!";
+
+		readBtn.addEventListener('click', () => {
+			if (!('speechSynthesis' in window)) {
+				alert("Desculpa, o teu navegador não suporta a leitura de voz.");
+				return;
+			}
+
+			if (isReading) {
+				// Se já estiver a ler, cancela
+				window.speechSynthesis.cancel();
+				isReading = false;
+				readBtn.innerHTML = '<span class="material-symbols-outlined">record_voice_over</span> Ouvir Apresentação';
+			} else {
+				// Começa a ler
+				const utterance = new SpeechSynthesisUtterance(introText);
+				utterance.lang = 'pt-BR';
+				utterance.rate = 1.05;
+				utterance.pitch = 1.1;
+
+				utterance.onend = () => {
+					isReading = false;
+					readBtn.innerHTML = '<span class="material-symbols-outlined">record_voice_over</span> Ouvir Apresentação';
+				};
+
+				window.speechSynthesis.speak(utterance);
+				isReading = true;
+				readBtn.innerHTML = '<span class="material-symbols-outlined">stop_circle</span> Parar Leitura';
+			}
+		});
+
+		// Pára a voz caso o utilizador feche a página ou mude de aba
+		window.addEventListener('beforeunload', () => {
+			if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+		});
+	</script>
 </body>
 </html>
