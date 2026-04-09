@@ -51,7 +51,7 @@ h1, .font-poppins {
 	font-family: 'Poppins', sans-serif;
 }
 
-/* ================= LAYOUT PRINCIPAL ================= */
+/* ================= LAYOUT PRINCIPAL (CHAT) ================= */
 .container {
 	display: flex;
 	width: 100%;
@@ -115,6 +115,8 @@ body.dark-mode .new-chat-btn:hover {
 	background: #4b5563;
 }
 
+.back-home-btn:hover { color: var(--verde-primario) !important; }
+
 /* ================= HISTORY LIST (SIDEBAR) ================= */
 .history-container {
 	width: 100%;
@@ -170,9 +172,7 @@ body.dark-mode .new-chat-btn:hover {
 	flex: 1;
 }
 
-.history-item:hover {
-	background: var(--border-color);
-}
+.history-item:hover { background: var(--border-color); }
 
 .history-item.active {
 	background: var(--verde-primario);
@@ -195,15 +195,9 @@ body.dark-mode .new-chat-btn:hover {
 
 .history-item:hover .delete-btn { opacity: 1; }
 
-.delete-btn:hover {
-	background: #fee2e2;
-	color: #ef4444 !important;
-}
+.delete-btn:hover { background: #fee2e2; color: #ef4444 !important; }
 
-body.dark-mode .delete-btn:hover {
-	background: #7f1d1d;
-	color: #fca5a5 !important;
-}
+body.dark-mode .delete-btn:hover { background: #7f1d1d; color: #fca5a5 !important; }
 
 .history-container::-webkit-scrollbar { width: 4px; }
 .history-container::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
@@ -241,7 +235,7 @@ body.dark-mode .delete-btn:hover {
 	color: var(--verde-primario);
 }
 
-/* ================= WELCOME SCREEN & INTRO ================= */
+/* ================= WELCOME SCREEN (CHAT) ================= */
 .welcome-screen {
 	display: flex;
 	flex-direction: column;
@@ -275,16 +269,50 @@ body.dark-mode .delete-btn:hover {
 	text-align: center;
 }
 
+/* ================= INTRO PAGE (LANDING PAGE - INDEX.HTML) ================= */
+.intro-body {
+	display: block;
+	height: auto;
+	overflow-y: auto;
+	background: var(--bg-app);
+}
+
+.intro-page-container {
+	max-width: 800px;
+	margin: 0 auto;
+	padding: 60px 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+}
+
+.intro-header {
+	margin-bottom: 40px;
+}
+
+.intro-mascot {
+	width: 120px;
+	margin-bottom: 16px;
+	animation: float 6s ease-in-out infinite;
+}
+
+.intro-header h1 {
+	font-size: 3rem;
+	color: var(--verde-primario);
+	margin-bottom: 8px;
+}
+
 .intro-section {
 	width: 100%;
-	max-width: 650px;
-	margin: 32px auto 40px;
+	max-width: 700px;
+	margin: 0 auto 40px;
 	display: flex;
 	flex-direction: column;
 	gap: 24px;
 	text-align: left;
 	background: var(--bg-input);
-	padding: 24px;
+	padding: 32px;
 	border-radius: var(--radius-lg);
 	border: 1px solid var(--border-color);
 	box-shadow: var(--shadow-sm);
@@ -317,6 +345,53 @@ body.dark-mode .delete-btn:hover {
 
 .intro-text p:last-child { margin-bottom: 0; }
 .intro-text strong { color: var(--verde-primario); font-weight: 600; }
+
+/* ================= BUTTONS (CALL TO ACTION) ================= */
+.btn-primary, .btn-secondary {
+	display: inline-block;
+	text-decoration: none;
+	font-family: 'Poppins', sans-serif;
+	font-weight: 600;
+	border-radius: var(--radius-lg);
+	transition: all 0.3s ease;
+	cursor: pointer;
+}
+
+.btn-primary {
+	margin-top: 24px;
+	padding: 16px 32px;
+	font-size: 1.1rem;
+	background: var(--verde-primario);
+	color: white;
+	box-shadow: 0 4px 14px rgba(46, 139, 87, 0.4);
+}
+
+.btn-primary:hover {
+	background: var(--verde-secundario);
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(46, 139, 87, 0.6);
+}
+
+.btn-secondary {
+	margin-top: 16px;
+	padding: 14px 28px;
+	font-size: 1rem;
+	background: transparent;
+	color: var(--verde-primario);
+	border: 2px solid var(--verde-primario);
+}
+
+.btn-secondary:hover {
+	background: var(--verde-primario);
+	color: white;
+}
+
+.cta-container {
+	margin-top: 32px;
+	padding-top: 24px;
+	border-top: 1px solid var(--border-color);
+	text-align: center;
+}
 
 /* ================= CHAT HISTORY ================= */
 .chat-history {
@@ -380,6 +455,26 @@ body.dark-mode .error-message .message-bubble {
 	color: #fca5a5;
 	border-color: #991b1b;
 }
+
+/* ================= MARKDOWN STYLES ================= */
+.message-bubble p { margin-bottom: 12px; }
+.message-bubble p:last-child { margin-bottom: 0; }
+.message-bubble ul, 
+.message-bubble ol {
+	margin-left: 24px;
+	margin-bottom: 12px;
+}
+.message-bubble li { margin-bottom: 6px; }
+.message-bubble strong { font-weight: 700; color: inherit; }
+.message-bubble em { font-style: italic; }
+.message-bubble code {
+	background: rgba(0, 0, 0, 0.08);
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-family: monospace;
+	font-size: 0.9em;
+}
+body.dark-mode .message-bubble code { background: rgba(255, 255, 255, 0.1); }
 
 /* ================= TYPING INDICATOR ================= */
 .typing-dots {
@@ -490,7 +585,6 @@ body.dark-mode .error-message .message-bubble {
 	.chat-history { padding-top: 60px; }
 	.message-bubble { max-width: 95%; }
 	
-	/* Lixeira sempre visível no mobile já que não tem hover */
 	.delete-btn { opacity: 1; }
 }
 

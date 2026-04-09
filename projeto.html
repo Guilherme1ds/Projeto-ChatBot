@@ -8,6 +8,7 @@
 	<link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 	<div class="container">
@@ -29,6 +30,10 @@
 				<ul class="history-list" id="history-list">
 					</ul>
 			</div>
+			
+			<a href="index.html" class="back-home-btn" style="margin-top: auto; padding: 16px; text-align: center; color: var(--texto-secundario); text-decoration: none; font-size: 0.9rem;">
+				<span class="material-symbols-outlined" style="vertical-align: middle; font-size: 1.2rem;">home</span> Início
+			</a>
 		</aside>
 
 		<main class="main-content">
@@ -43,25 +48,7 @@
 					<img src="img/mascote planta.png" alt="Mascote FlorIA" onerror="this.src='https://placehold.co/200x200/287a2c/FFF?text=FlorIA'">
 				</div>
 				<h1>FlorIA</h1>
-				<p class="subtitle">Sua assistente inteligente para o mundo verde.</p>
-
-				<section class="intro-section">
-					<div class="video-container">
-						<iframe 
-							src="https://www.youtube.com/embed/ZzE4v4fN_W8?si=placeholder" 
-							title="Apresentação da FlorIA" 
-							frameborder="0" 
-							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-							allowfullscreen>
-						</iframe>
-					</div>
-					
-					<div class="intro-text">
-						<p>Bem-vindo à <strong>FlorIA</strong>, uma inteligência artificial criada exclusivamente para apaixonados pela natureza, botânicos, agricultores e curiosos. Nosso objetivo é democratizar o conhecimento sobre flora, ecologia e cuidados com o meio ambiente de forma acessível, rápida e orgânica.</p>
-						<p>No vídeo acima, você conferiu como a FlorIA pode ajudar no dia a dia. Seja para identificar pragas em suas plantas, descobrir a melhor época para podar sua horta, ou aprender sobre adubação sustentável, ela está pronta para ajudar.</p>
-						<p>Envie sua pergunta no campo abaixo e deixe a FlorIA plantar as melhores soluções na sua tela!</p>
-					</div>
-				</section>
+				<p class="subtitle">Como posso ajudar as tuas plantas hoje?</p>
 			</div>
 
 			<div id="chat-history" class="chat-history" style="display: none;"></div>
@@ -69,13 +56,13 @@
 			<div class="input-container">
 				<form class="question-form" id="chat-form">
 					<div class="input-wrapper">
-						<input type="text" id="chat-input" placeholder="Pergunte à FlorIA sobre plantas..." required autocomplete="off">
+						<input type="text" id="chat-input" placeholder="Pergunta à FlorIA sobre plantas..." required autocomplete="off">
 						<button type="submit" class="send-btn" title="Enviar">
 							<span class="material-symbols-outlined">send</span>
 						</button>
 					</div>
 				</form>
-				<p class="disclaimer">A FlorIA pode cometer erros ao identificar espécies. Sempre verifique informações sensíveis.</p>
+				<p class="disclaimer">A FlorIA pode cometer erros ao identificar espécies. Verifica sempre as informações sensíveis.</p>
 			</div>
 		</main>
 	</div>
@@ -83,7 +70,6 @@
 	<script>
 		const BACKEND_URL = 'http://127.0.0.1:5000/api/chat';
 
-		// Elementos da DOM
 		const themeToggle = document.getElementById('theme-toggle');
 		const themeIconSpan = document.getElementById('theme-icon-span');
 		const body = document.body;
@@ -96,7 +82,6 @@
 		const sidebar = document.getElementById('sidebar');
 		const historyList = document.getElementById('history-list');
 
-		// Controle de Tema Persistente
 		const savedTheme = localStorage.getItem('floria-theme');
 		if (savedTheme === 'dark') {
 			body.classList.add('dark-mode');
@@ -110,13 +95,10 @@
 			localStorage.setItem('floria-theme', isDark ? 'dark' : 'light');
 		});
 
-		// Toggle Menu Mobile
 		mobileToggle.addEventListener('click', () => {
 			sidebar.classList.toggle('active');
 		});
 
-		// ================= LÓGICA DE SESSÕES (MÚLTIPLOS CHATS) =================
-		
 		let sessions = JSON.parse(localStorage.getItem('floria-sessions')) || [];
 		let currentSessionId = null;
 
@@ -133,7 +115,6 @@
 				li.classList.add('history-item');
 				if (session.id === currentSessionId) li.classList.add('active');
 				
-				// Container clicável para abrir a conversa
 				const contentDiv = document.createElement('div');
 				contentDiv.classList.add('history-item-content');
 				contentDiv.innerHTML = `
@@ -142,13 +123,12 @@
 				`;
 				contentDiv.addEventListener('click', () => loadSession(session.id));
 
-				// Botão de Deletar
 				const deleteBtn = document.createElement('span');
 				deleteBtn.classList.add('material-symbols-outlined', 'delete-btn');
 				deleteBtn.textContent = 'delete';
 				deleteBtn.title = 'Excluir chat';
 				deleteBtn.addEventListener('click', (e) => {
-					e.stopPropagation(); // Evita que o clique abra a conversa
+					e.stopPropagation(); 
 					deleteSession(session.id);
 				});
 				
@@ -177,7 +157,6 @@
 			sessions = sessions.filter(s => s.id !== id);
 			saveSessions();
 			
-			// Se deletou o chat atual, volta pra tela de boas-vindas
 			if (currentSessionId === id) {
 				currentSessionId = null;
 				chatHistory.innerHTML = '';
@@ -195,10 +174,7 @@
 			if(window.innerWidth <= 768) sidebar.classList.remove('active');
 		});
 
-		// Inicializa barra lateral
 		renderSidebar();
-
-		// ================= LÓGICA DE MENSAGENS =================
 
 		function showTypingIndicator() {
 			const typingDiv = document.createElement('div');
@@ -226,7 +202,14 @@
 			
 			const bubble = document.createElement('div');
 			bubble.classList.add('message-bubble');
-			bubble.innerHTML = message.replace(/\n/g, '<br>'); 
+			
+			if (sender === 'bot') {
+				bubble.innerHTML = marked.parse(message);
+			} else if (sender === 'user') {
+				bubble.innerHTML = message.replace(/\n/g, '<br>');
+			} else {
+				bubble.innerHTML = message;
+			}
 			
 			messageDiv.appendChild(bubble);
 			chatHistory.appendChild(messageDiv);
@@ -257,6 +240,17 @@
 				sessions.push({ id: currentSessionId, title: newTitle, messages: [] });
 			}
 
+			// Prepara o histórico da sessão atual para a memória da IA
+			const currentSession = sessions.find(s => s.id === currentSessionId);
+			const historyToSend = currentSession.messages
+				.filter(msg => msg.sender !== 'error')
+				.map(msg => ({
+					role: msg.sender === 'user' ? 'user' : 'assistant',
+					content: msg.text
+				}));
+			
+			historyToSend.push({ role: 'user', content: userText });
+
 			welcomeScreen.style.display = 'none';
 			chatHistory.style.display = 'flex';
 			addMessageToUI(userText, 'user');
@@ -268,7 +262,7 @@
 				const response = await fetch(BACKEND_URL, {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ message: userText })
+					body: JSON.stringify({ history: historyToSend })
 				});
 
 				const data = await response.json();
@@ -281,7 +275,7 @@
 			} catch (error) {
 				console.error('Erro:', error);
 				removeTypingIndicator();
-				addMessageToUI(error.message || 'Ops! As folhas da FlorIA murcharam. Verifique a conexão.', 'error');
+				addMessageToUI(error.message || 'Ops! As folhas da FlorIA murcharam. Verifica a ligação.', 'error');
 			}
 		});
 	</script>
