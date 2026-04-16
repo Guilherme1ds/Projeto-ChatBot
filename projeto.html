@@ -77,6 +77,7 @@
 
 	<script>
 		const BACKEND_URL = 'http://127.0.0.1:5000/api/chat';
+		let typingInterval; // Variável global para controlar a animação de escrita
 
 		// ================= CONTROLO DE TEMA =================
 		const themeToggle = document.getElementById('theme-toggle');
@@ -107,14 +108,12 @@
 			localStorage.setItem('floria-muted', isMuted);
 			muteIconSpan.textContent = isMuted ? 'volume_off' : 'volume_up';
 			if (isMuted && 'speechSynthesis' in window) {
-				window.speechSynthesis.cancel(); // Para de falar se o utilizador silenciar a meio
+				window.speechSynthesis.cancel();
 			}
 		});
 
 		function speakText(text) {
 			if (isMuted || !('speechSynthesis' in window)) return;
-			
-			// Limpa formatação Markdown para a leitura ser mais natural
 			const cleanText = text.replace(/[*#_`~]/g, ''); 
 			const utterance = new SpeechSynthesisUtterance(cleanText);
 			utterance.lang = 'pt-BR';
@@ -129,26 +128,22 @@
 
 		if (SpeechRecognition) {
 			const recognition = new SpeechRecognition();
-			recognition.lang = 'pt-BR'; // Idioma que vai reconhecer
+			recognition.lang = 'pt-BR';
 			recognition.continuous = false;
-			
-			// Variável para saber se está a gravar ou não
 			let isListening = false;
 
 			micBtn.addEventListener('click', () => {
 				if (isListening) {
-					// Se já está a ouvir, manda parar manualmente
 					recognition.stop();
 					isListening = false;
-					micBtn.style.color = 'var(--texto-secundario)'; // Volta à cor normal
-					chatInput.placeholder = "Pergunta à FlorIA sobre plantas...";
+					micBtn.style.color = 'var(--texto-secundario)';
+					chatInput.placeholder = "Pergunte à FlorIA sobre plantas...";
 				} else {
-					// Se não está a ouvir, começa a gravar
 					try {
 						recognition.start();
 						isListening = true;
-						micBtn.style.color = '#ef4444'; // Fica vermelho
-						chatInput.placeholder = "A ouvir as tuas raízes... (Clica novamente para parar)";
+						micBtn.style.color = '#ef4444';
+						chatInput.placeholder = "A ouvir as tuas raízes... (Clica para parar)";
 					} catch (e) {
 						console.error("O microfone já estava ativo.");
 					}
@@ -159,30 +154,22 @@
 				chatInput.value = event.results[0][0].transcript;
 			};
 
-			// Quando a pessoa termina de falar naturalmente
 			recognition.onspeechend = () => {
 				recognition.stop();
 				isListening = false;
 				micBtn.style.color = 'var(--texto-secundario)';
-				chatInput.placeholder = "Pergunta à FlorIA sobre plantas...";
+				chatInput.placeholder = "Pergunte à FlorIA sobre plantas...";
 			};
 
-			// Se houver algum erro ou ninguém falar
 			recognition.onerror = (event) => {
 				console.error('Erro no microfone:', event.error);
 				isListening = false;
 				micBtn.style.color = 'var(--texto-secundario)';
-				
-				if (event.error === 'no-speech') {
-					chatInput.placeholder = "Não ouvi nada. Tenta novamente!";
-				} else {
-					chatInput.placeholder = "Erro ao ouvir. Tenta escrever!";
-				}
-				
-				setTimeout(() => chatInput.placeholder = "Pergunta à FlorIA sobre plantas...", 3000);
+				chatInput.placeholder = event.error === 'no-speech' ? "Não ouvi nada. Tente novamente!" : "Erro ao ouvir. Tente escrever!";
+				setTimeout(() => chatInput.placeholder = "Pergunte à FlorIA sobre plantas...", 3000);
 			};
 		} else {
-			micBtn.style.display = 'none'; // Esconde se o navegador for incompatível
+			micBtn.style.display = 'none';
 		}
 
 		// ================= CHAT E LÓGICA BASE =================
@@ -233,6 +220,7 @@
 
 		function loadSession(id) {
 			currentSessionId = id;
+			clearInterval(typingInterval); // Para a animação se mudar de chat
 			const session = sessions.find(s => s.id === id);
 			if (!session) return;
 			chatHistory.innerHTML = '';
@@ -241,7 +229,7 @@
 			session.messages.forEach(msg => addMessageToUI(msg.text, msg.sender, false));
 			renderSidebar();
 			if(window.innerWidth <= 768) sidebar.classList.remove('active');
-			if ('speechSynthesis' in window) window.speechSynthesis.cancel(); // Para a voz ao mudar de chat
+			if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 		}
 
 		function deleteSession(id) {
@@ -249,6 +237,7 @@
 			saveSessions();
 			if (currentSessionId === id) {
 				currentSessionId = null;
+				clearInterval(typingInterval);
 				chatHistory.innerHTML = '';
 				chatHistory.style.display = 'none';
 				welcomeScreen.style.display = 'flex';
@@ -258,6 +247,7 @@
 
 		newChatBtn.addEventListener('click', () => {
 			currentSessionId = null;
+			clearInterval(typingInterval);
 			chatHistory.innerHTML = '';
 			chatHistory.style.display = 'none';
 			welcomeScreen.style.display = 'flex';
@@ -282,6 +272,7 @@
 			if (indicator) indicator.remove();
 		}
 
+		// Adiciona a mensagem IMEDIATAMENTE (usado para histórico e utilizador)
 		function addMessageToUI(message, sender, save = true) {
 			const messageDiv = document.createElement('div');
 			messageDiv.classList.add('chat-message', `${sender}-message`);
@@ -305,6 +296,43 @@
 			scrollToBottom();
 		}
 
+		// NOVO: Adiciona a mensagem com EFEITO DE MÁQUINA DE ESCREVER
+		function typeWriterEffect(text, sender) {
+			const messageDiv = document.createElement('div');
+			messageDiv.classList.add('chat-message', `${sender}-message`);
+			const bubble = document.createElement('div');
+			bubble.classList.add('message-bubble');
+			messageDiv.appendChild(bubble);
+			chatHistory.appendChild(messageDiv);
+
+			let i = 0;
+			let currentText = "";
+			
+			// Para qualquer animação anterior caso o utilizador envie mensagens rápido demais
+			clearInterval(typingInterval);
+
+			typingInterval = setInterval(() => {
+				// Puxa 2 caracteres de cada vez para ser mais fluido e não demorar uma eternidade
+				currentText = text.substring(0, i + 2);
+				bubble.innerHTML = marked.parse(currentText);
+				scrollToBottom();
+				i += 2;
+
+				if (i >= text.length) {
+					clearInterval(typingInterval);
+					bubble.innerHTML = marked.parse(text); // Renderiza a versão final para garantir segurança
+					scrollToBottom();
+					
+					// Salva no histórico quando terminar
+					const session = sessions.find(s => s.id === currentSessionId);
+					if (session) {
+						session.messages.push({ text: text, sender: sender });
+						saveSessions();
+					}
+				}
+			}, 15); // Velocidade de digitação (15ms)
+		}
+
 		function scrollToBottom() {
 			chatHistory.scrollTo({ top: chatHistory.scrollHeight, behavior: 'smooth' });
 		}
@@ -314,8 +342,8 @@
 			const userText = chatInput.value.trim();
 			if (!userText) return;
 
-			// Pára qualquer fala anterior se o utilizador enviar nova mensagem
 			if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+			clearInterval(typingInterval); // Para a escrita da mensagem antiga se houver
 
 			if (!currentSessionId) {
 				currentSessionId = Date.now().toString(); 
@@ -335,6 +363,7 @@
 
 			welcomeScreen.style.display = 'none';
 			chatHistory.style.display = 'flex';
+			
 			addMessageToUI(userText, 'user');
 			chatInput.value = '';
 			
@@ -352,10 +381,11 @@
 
 				if (!response.ok) throw new Error(data.error || 'Erro desconhecido');
 				
-				addMessageToUI(data.reply, 'bot');
-				
-				// A FlorIA FALA AQUI!
+				// A FlorIA começa a falar...
 				speakText(data.reply);
+				
+				// ... e ao mesmo tempo começa a "escrever" na tela!
+				typeWriterEffect(data.reply, 'bot');
 
 			} catch (error) {
 				console.error('Erro:', error);
