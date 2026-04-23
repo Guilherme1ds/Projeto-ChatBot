@@ -1,6 +1,6 @@
 # 🌿 FlorIA Chatbot
 
-Desenvolvido por: Guilherme Henrique Bernardi e Gustavo Franco Pereira
+Desenvolvido por: **Guilherme Henrique Bernardi** e **Gustavo Franco Pereira**
 
 > **"Semeando dados, colhendo resultados."**
 
