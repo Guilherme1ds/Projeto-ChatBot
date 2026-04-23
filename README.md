@@ -1,5 +1,7 @@
 # 🌿 FlorIA Chatbot
 
+Desenvolvido por: Guilherme Henrique Bernardi e Gustavo Franco Pereira
+
 > **"Semeando dados, colhendo resultados."**
 
 A **FlorIA** é uma assistente virtual (chatbot) focada no universo botânico, jardinagem e agricultura. Representada pelo mascote de um robô jardineiro simpático, ela foi desenvolvida para ajudar amantes de plantas, paisagistas, jardineiros e agricultores a tirar dúvidas sobre cultivo, pragas, adubação e cuidados gerais com a flora.
